@@ -1,6 +1,8 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { Chat, api } from '../lib/api'
+import { AiChoice, EFFORTS, MODELS, fmtTokens, friendlyAiError, getChoice, getFavs, key, label, setChoice } from '../lib/ai'
 import { useToast } from './ui'
+import AiModels from './AiModels'
 
 type Msg = { role: 'user' | 'assistant' | 'action'; text: string }
 const SUGGESTIONS = [
@@ -19,7 +21,7 @@ function toMsgs(raw: { role: string; content: any[] }[]): Msg[] {
   return out
 }
 
-export default function AgentView({ projectId, onChanged }: { projectId: string; onChanged: () => void }) {
+export default function AgentView({ projectId, workspaceId, onChanged }: { projectId: string; workspaceId: string; onChanged: () => void }) {
   const [chats, setChats] = useState<Chat[]>([])
   const [chatId, setChatId] = useState<string | undefined>()
   const [msgs, setMsgs] = useState<Msg[]>([])
@@ -27,6 +29,14 @@ export default function AgentView({ projectId, onChanged }: { projectId: string;
   const [busy, setBusy] = useState(false)
   const toast = useToast()
   const end = useRef<HTMLDivElement>(null)
+  const [choice, setC] = useState<AiChoice>(getChoice)
+  const [favs, setFavsState] = useState<AiChoice[]>(getFavs)
+  const [showModels, setShowModels] = useState(false)
+  useEffect(() => {
+    const on = () => { setC(getChoice()); setFavsState(getFavs()) }
+    window.addEventListener('ai-prefs', on)
+    return () => window.removeEventListener('ai-prefs', on)
+  }, [])
 
   const loadChats = useCallback(async () => { try { setChats(await api.chats(projectId)) } catch { /* ignora */ } }, [projectId])
   useEffect(() => { loadChats() }, [loadChats])
@@ -42,12 +52,13 @@ export default function AgentView({ projectId, onChanged }: { projectId: string;
     if (!text.trim() || busy) return
     setMsgs(m => [...m, { role: 'user', text }]); setInput(''); setBusy(true)
     try {
-      const r = await api.agent(projectId, text, chatId)
+      const r = await api.agent(projectId, text, chatId, choice.model, choice.effort)
       if (!chatId) { setChatId(r.chat_id); loadChats() }
-      setMsgs(m => [...m, ...r.actions.map(a => ({ role: 'action' as const, text: '✓ ' + a })), { role: 'assistant', text: r.reply || '(sem resposta)' }])
+      setMsgs(m => [...m, ...r.actions.map(a => ({ role: 'action' as const, text: '✓ ' + a })), { role: 'assistant', text: r.reply || '(sem resposta)' },
+        { role: 'action', text: `${label({ model: r.model, effort: r.effort as AiChoice['effort'] })} · ${fmtTokens(r.usage.input + r.usage.cache)} tokens de entrada · ${fmtTokens(r.usage.output)} de saída` }])
       if (r.actions.length) onChanged()
     } catch (er) {
-      setMsgs(m => [...m, { role: 'assistant', text: '⚠ ' + (er as Error).message }])
+      setMsgs(m => [...m, { role: 'assistant', text: '⚠ ' + friendlyAiError((er as Error).message) }])
     } finally { setBusy(false) }
   }
 
@@ -55,6 +66,7 @@ export default function AgentView({ projectId, onChanged }: { projectId: string;
     <div className="agent">
       <aside className="chats">
         <button className="btn primary" onClick={() => { setChatId(undefined); setMsgs([]) }}>+ Nova conversa</button>
+        <button className="btn" onClick={() => setShowModels(true)}>✳ Modelos de IA</button>
         {chats.map(c => (
           <div key={c.id} className={'chat-item' + (c.id === chatId ? ' on' : '')} onClick={() => open(c.id)}>
             <span className="grow">{c.title}</span>
@@ -80,8 +92,18 @@ export default function AgentView({ projectId, onChanged }: { projectId: string;
         <form className="composer" onSubmit={send}>
           <textarea className="input" rows={2} value={input} placeholder="Ex.: crie um BI de vendas por vendedor com os dados do Sankhya"
             onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
-          <button className="btn primary" disabled={busy || !input.trim()}>Enviar</button>
+          <div className="stack" style={{ gap: 6 }}>
+            <select className="input model-sel" value={key(choice)} title="Modelo e esforço"
+              onChange={e => { if (e.target.value === 'more') { setShowModels(true); return } const [model, effort] = e.target.value.split(':'); const c = { model, effort } as AiChoice; setC(c); setChoice(c) }}>
+              <optgroup label="Favoritos">{favs.map(f => <option key={key(f)} value={key(f)}>✳ {label(f)}</option>)}</optgroup>
+              <optgroup label="Todos">{MODELS.flatMap(m => EFFORTS.map(e => ({ model: m.id, effort: e }))).filter(c => !favs.some(f => key(f) === key(c)))
+                .map(c => <option key={key(c)} value={key(c)}>{label(c)}</option>)}</optgroup>
+              <option value="more">Gerenciar modelos…</option>
+            </select>
+            <button className="btn primary" disabled={busy || !input.trim()} style={{ justifyContent: 'center' }}>Enviar</button>
+          </div>
         </form>
+        {showModels && <AiModels ws={workspaceId} canEdit onClose={() => setShowModels(false)} />}
       </section>
     </div>
   )

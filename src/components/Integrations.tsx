@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { FUNCTIONS_URL, Integration, IntegrationKind, api } from '../lib/api'
 import { Modal, useAction } from './ui'
+import AiModels from './AiModels'
 
 type Field = { key: string; label: string; secret?: boolean; placeholder?: string; type?: string; help?: string }
 type Template = { id: string; kind: IntegrationKind; name: string; icon: string; desc: string; config?: Record<string, unknown>; fields: Field[]; secrets: Field[]; modes?: { v: string; l: string; secrets: Field[]; fields?: Field[] }[] }
@@ -42,6 +43,7 @@ export default function Integrations({ ws, canEdit }: { ws: string; canEdit: boo
   const [editing, setEditing] = useState<{ tpl: Template; integ?: Integration } | null>(null)
   const [picking, setPicking] = useState(false)
   const [testing, setTesting] = useState<string | null>(null)
+  const [aiPanel, setAiPanel] = useState(false)
   const { run } = useAction()
   const load = useCallback(async () => { const l = await run(() => api.integrations(ws)); if (l) setList(l) }, [run, ws])
   useEffect(() => { load() }, [load])
@@ -71,10 +73,10 @@ export default function Integrations({ ws, canEdit }: { ws: string; canEdit: boo
                 <div className="row"><span style={{ fontSize: 22 }}>{t?.icon}</span><b className="grow">{i.name}</b></div>
                 <span className={'status ' + i.status}>{i.status === 'ok' ? '● Conectado' : i.status === 'error' ? '● Erro' : '● Não testado'}</span>
                 {i.last_error && <span className="err" style={{ fontSize: 12 }}>{i.last_error}</span>}
-                <span className="muted" style={{ fontSize: 11 }}>{t?.name} · ID: {i.id.slice(0, 8)}</span>
+                <span className="muted" style={{ fontSize: 11 }}>{t?.name}{i.config?.key_hint ? ` · ${i.config.key_hint}` : ''} · ID: {i.id.slice(0, 8)}</span>
                 {canEdit && <div className="row">
                   <button className="btn sm" disabled={testing === i.id} onClick={() => test(i.id)}>{testing === i.id ? 'Testando…' : 'Testar'}</button>
-                  <button className="btn sm" onClick={() => setEditing({ tpl: t, integ: i })}>Editar</button>
+                  <button className="btn sm" onClick={() => (i.kind === 'anthropic' ? setAiPanel(true) : setEditing({ tpl: t, integ: i }))}>{i.kind === 'anthropic' ? 'Modelos de IA' : 'Editar'}</button>
                   <button className="btn sm danger ghost" onClick={async () => {
                     if (confirm(`Apagar a integração "${i.name}"? Consultas e importações que a usam também serão apagadas.`) && await run(() => api.deleteIntegration(i.id).then(() => true), 'Integração apagada')) load()
                   }}>Apagar</button>
@@ -89,7 +91,7 @@ export default function Integrations({ ws, canEdit }: { ws: string; canEdit: boo
         <Modal title="Nova integração" onClose={() => setPicking(false)}>
           <div className="stack" style={{ gap: 4 }}>
             {TEMPLATES.map(t => (
-              <button key={t.id} className="pick" onClick={() => { setPicking(false); setEditing({ tpl: t }) }}>
+              <button key={t.id} className="pick" onClick={() => { setPicking(false); if (t.kind === 'anthropic') setAiPanel(true); else setEditing({ tpl: t }) }}>
                 <span style={{ fontSize: 20 }}>{t.icon}</span><span className="grow" style={{ textAlign: 'left' }}><b>{t.name}</b><br /><span className="muted" style={{ fontSize: 12 }}>{t.desc}</span></span>
               </button>
             ))}
@@ -97,6 +99,7 @@ export default function Integrations({ ws, canEdit }: { ws: string; canEdit: boo
           <p className="muted" style={{ fontSize: 12 }}>Outros sistemas (TOTVS, Omie, HubSpot, Mercado Pago…) podem ser conectados por “API Key / REST”.</p>
         </Modal>
       )}
+      {aiPanel && <AiModels ws={ws} canEdit={canEdit} onClose={() => { setAiPanel(false); load() }} />}
       {editing && <IntegrationForm ws={ws} tpl={editing.tpl} integ={editing.integ} onClose={() => setEditing(null)}
         onSaved={async id => { setEditing(null); await load(); await test(id) }} />}
     </div>

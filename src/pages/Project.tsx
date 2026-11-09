@@ -93,7 +93,7 @@ export default function ProjectPage({ projectId, kind, itemId, email }: Props) {
         </nav>
 
         <main className="main">
-          {kind === 'ai' && dev ? <AgentView projectId={projectId} onChanged={() => reload()} />
+          {kind === 'ai' && dev ? <AgentView projectId={projectId} workspaceId={project?.workspace_id ?? ''} onChanged={() => reload()} />
           : table ? <TableView key={table.id} projectId={projectId} table={table} canEdit={dev}
               onChanged={reload} onDropped={async () => { await reload(); go(base) }} />
           : kind === 'q' ? <QueryView key={itemId} projectId={projectId} query={query ?? null} integrations={integrations} canEdit={dev}

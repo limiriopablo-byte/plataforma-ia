@@ -118,3 +118,24 @@ textarea.input { resize: vertical; line-height: 1.5 }
 .wgrid { grid-auto-flow: dense }
 .live { white-space: nowrap }
 .widget .wh h3 { min-width: 0 }
+/* Modelos de IA */
+.ai-modal { width: 100%; max-width: 1000px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden }
+.ai-modal header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border) }
+.ai-body { display: grid; grid-template-columns: 280px 1fr; min-height: 0; flex: 1 }
+.ai-side { border-right: 1px solid var(--border); padding: 12px; overflow: auto; display: flex; flex-direction: column; gap: 6px }
+.ai-side .sec { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--light); text-transform: uppercase; padding: 10px 8px 2px }
+.ai-prov { display: flex; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--border); border-radius: 12px; font-size: 13px }
+.ai-prov.on { border-color: var(--text) } .ai-prov.off { opacity: .5 }
+.ai-ico { width: 34px; height: 34px; border-radius: 10px; background: #FDF1EC; color: #D97757; display: grid; place-items: center; font-size: 18px; flex: none }
+.ai-ico.big { width: 44px; height: 44px; font-size: 22px; margin-right: 6px }
+.ai-main { padding: 20px; overflow: auto; display: flex; flex-direction: column; gap: 14px }
+.ai-conn { border: 1.5px solid #A6E9C5; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #fff }
+.ai-usage { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; font-size: 13px; background: var(--bg); border-radius: 10px; padding: 10px 12px }
+.ai-model { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--bg); cursor: pointer; border: 1px solid transparent }
+.ai-model:hover { border-color: var(--border-mid) } .ai-model.on { border-color: var(--primary); background: var(--primary-soft) }
+.star { background: none; border: 0; font-size: 18px; cursor: pointer; color: var(--border-mid) } .star.on { color: var(--text) }
+.chip { border: 1px solid var(--border); background: var(--bg); border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 12px; cursor: pointer }
+.chip.on { border-color: var(--primary); color: var(--primary) }
+.pill.ok { background: #ECFDF3; color: #027A48 }
+.model-sel { width: 190px; font-size: 12px; padding: 6px 8px }
+@media (max-width: 800px) { .ai-body { grid-template-columns: 1fr } .ai-side { border-right: 0; border-bottom: 1px solid var(--border) } }

@@ -5,6 +5,8 @@ import { Ctx, HttpError, admin, aggregateRows, applyFilters, loadIntegration, pr
 import { runQuery } from './connectors.ts'
 
 const MODEL = 'claude-opus-5-5'
+export const MODELS = ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5']
+export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
 const MAX_STEPS = 12
 
 const SYSTEM = `Você é o agente de construção da Plataforma IA. Você ajuda empresas brasileiras a criar sistemas, tabelas, BI e telas conectados aos dados delas.
@@ -55,7 +57,7 @@ const TOOLS: ToolDef[] = [
   { name: 'save_screen', description: 'Cria ou substitui uma tela (app) com blocos. Se screen_id vier, substitui o rascunho. publish=true publica uma nova versão para os usuários.', input_schema: obj({ screen_id: { type: 'string' }, name: { type: 'string' }, blocks: { type: 'array', items: blockSchema }, publish: { type: 'boolean' } }, ['name', 'blocks']) },
 ]
 
-export async function agentChat(ctx: Ctx, body: { project_id: string; chat_id?: string; message: string }) {
+export async function agentChat(ctx: Ctx, body: { project_id: string; chat_id?: string; message: string; model?: string; effort?: string }) {
   const projectId = body.project_id
   const ws = await projectWs(projectId)
   await requireRole(ctx.userId, ws, true)
@@ -67,6 +69,11 @@ export async function agentChat(ctx: Ctx, body: { project_id: string; chat_id?: 
   const { secrets } = await loadIntegration(ai.id)
   if (!secrets.api_key) throw new HttpError(400, 'A integração Anthropic está sem chave de API.')
   const client = new Anthropic({ apiKey: secrets.api_key })
+  // modelo e esforço: o que veio do chat (se permitido) ou o padrão da integração
+  const model = MODELS.includes(body.model ?? '') ? body.model! : MODELS.includes(ai.config?.model) ? ai.config.model : MODEL
+  const effort = EFFORTS.includes(body.effort ?? '') ? body.effort! : EFFORTS.includes(ai.config?.effort) ? ai.config.effort : 'medium'
+  // fallback de recusa no servidor existe para Opus e Sonnet (não para Haiku)
+  const fallback = model === 'claude-haiku-5-5' ? {} : { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' }
 
   // conversa
   let chatId = body.chat_id
@@ -105,18 +112,22 @@ export async function agentChat(ctx: Ctx, body: { project_id: string; chat_id?: 
   const actions: string[] = []
   const exec = makeExecutor(ctx, projectId, ws, actions)
   let finalText = ''
+  const usage = { input: 0, output: 0, cache: 0 }
   for (let step = 0; step < MAX_STEPS; step++) {
     const res = await client.beta.messages.create({
-      model: (ai.config?.model as string) || MODEL,
+      model,
       max_tokens: 16000,
       thinking: { type: 'adaptive' },
-      output_config: { effort: 'medium' },
+      output_config: { effort },
       system: SYSTEM + `\n\nProjeto atual: ${projectId}. Data de hoje: ${new Date().toISOString().slice(0, 10)}.`,
       tools: TOOLS as Anthropic.Beta.BetaTool[],
       messages,
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
+      ...fallback,
     } as any) as Anthropic.Beta.BetaMessage
+    const u = res.usage as any
+    usage.input += u?.input_tokens ?? 0; usage.output += u?.output_tokens ?? 0; usage.cache += u?.cache_read_input_tokens ?? 0
+    await admin.from('ai_usage').insert({ workspace_id: ws, user_id: ctx.userId, model: res.model ?? model, effort,
+      input_tokens: u?.input_tokens ?? 0, output_tokens: u?.output_tokens ?? 0, cache_read_tokens: u?.cache_read_input_tokens ?? 0 })
     messages.push({ role: 'assistant', content: res.content as Anthropic.Beta.BetaContentBlockParam[] })
     await save('assistant', res.content)
     const text = res.content.filter(b => b.type === 'text').map(b => (b as Anthropic.Beta.BetaTextBlock).text).join('\n')
@@ -137,7 +148,7 @@ export async function agentChat(ctx: Ctx, body: { project_id: string; chat_id?: 
     await save('user', results)
     if (step === MAX_STEPS - 1) finalText += '\n\n(Parei após muitas etapas. Mande "continuar" para eu seguir.)'
   }
-  return { chat_id: chatId, reply: finalText, actions }
+  return { chat_id: chatId, reply: finalText, actions, model, effort, usage }
 }
 
 function makeExecutor(ctx: Ctx, projectId: string, ws: string, actions: string[]) {

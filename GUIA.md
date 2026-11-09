@@ -40,9 +40,11 @@ Dicas:
 
 ## 5. Agente IA
 
-1. Crie uma chave em **console.anthropic.com → API Keys**.
-2. **Integrações → + Nova integração → Anthropic (IA)** → cole a chave → salvar e testar.
-3. No projeto → **✨ Agente IA** → peça, por exemplo:
+1. Crie uma chave em **console.anthropic.com → API Keys** (e adicione créditos em Billing; dá para definir limite mensal).
+2. No projeto → **✨ Agente IA → ✳ Modelos de IA** → cole a chave em "Conectar chave de API".
+   No mesmo painel: escolha o modelo e o esforço (low → max), marque favoritos com ★ e acompanhe o uso/custo estimado do mês.
+   A assinatura do claude.ai (Pro/Max) não pode ser usada aqui: os termos da Anthropic só permitem chave de API em produtos de terceiros.
+3. Peça, por exemplo:
    *"Crie um dashboard de vendas do Sankhya ao vivo: total vendido no mês, vendas por vendedor e evolução diária."*
 
 O agente testa o SQL no Sankhya, cria a consulta ao vivo e o dashboard. Cada pedido consome créditos da sua conta Anthropic.

@@ -34,6 +34,7 @@ export type Block = {
 }
 export type Screen = { id: string; project_id: string; name: string; draft: { blocks: Block[] }; published_version: number | null; updated_at: string }
 export type ScreenVersion = { id: string; version: number; spec: { blocks: Block[] }; note: string | null; published_at: string }
+export type AiUsage = { model: string; effort: string | null; input_tokens: number; output_tokens: number; cache_read_tokens: number; created_at: string }
 export type Chat = { id: string; title: string; created_at: string }
 export type ChatMessage = { id: number; role: 'user' | 'assistant'; content: any[]; created_at: string }
 
@@ -148,8 +149,11 @@ export const api = {
   chats: (p: string) => q<Chat[]>(supabase.from('agent_chats').select('id,title,created_at').eq('project_id', p).order('created_at', { ascending: false })),
   chatMessages: (chat: string) => q<ChatMessage[]>(supabase.from('agent_messages').select('*').eq('chat_id', chat).order('id')),
   deleteChat: (id: string) => q<null>(supabase.from('agent_chats').delete().eq('id', id)),
-  agent: (project_id: string, message: string, chat_id?: string) =>
-    fn<{ chat_id: string; reply: string; actions: string[] }>('agent', { project_id, message, chat_id }),
+  agent: (project_id: string, message: string, chat_id?: string, model?: string, effort?: string) =>
+    fn<{ chat_id: string; reply: string; actions: string[]; model: string; effort: string; usage: { input: number; output: number; cache: number } }>(
+      'agent', { project_id, message, chat_id, model, effort }),
+  aiUsage: (ws: string, since: string) => q<AiUsage[]>(supabase.from('ai_usage').select('model,effort,input_tokens,output_tokens,cache_read_tokens,created_at')
+    .eq('workspace_id', ws).gte('created_at', since).order('created_at', { ascending: false }).limit(5000)),
 }
 
 export const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`
