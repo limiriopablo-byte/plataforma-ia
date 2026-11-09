@@ -29,8 +29,8 @@ Navegador (Vite + React)  ──►  Supabase
 | 3 | Integrador: **Sankhya** (Gateway OAuth, Gateway token+appkey, acesso direto), **API REST**, **PostgreSQL**; credenciais no Vault; **consultas ao vivo** com cache; teste de conexão |
 | 4 | Automações: **importações agendadas** (Sankhya → tabela local), **webhooks** de entrada, histórico de execuções |
 | 5 | **Agente IA** (Claude) que lista dados, testa SQL no Sankhya, cria tabelas, consultas, importações, dashboards e telas — agindo com as permissões de quem pede |
-| 7 | **Conector MCP**: usar a plataforma de dentro do Claude (claude.ai, Desktop, Claude Code) com a assinatura do usuário; chaves por usuário, revogáveis |
 | 6 | **Telas (apps)** por blocos (KPI, gráficos, lista, formulário, texto) sobre tabelas ou dados ao vivo; publicar versões, voltar versão, link para usuários business |
+| 7 | **Conector MCP**: usar a plataforma de dentro do Claude (claude.ai, Desktop, Claude Code) com a assinatura do usuário; chaves por usuário, revogáveis |
 
 ## Segurança
 
