@@ -1,0 +1,84 @@
+:root {
+  --bg: #F9F9FD; --card: #FFFFFF; --text: #0E1428; --mid: #424967; --light: #8B90A8;
+  --border: #E7E8F0; --border-mid: #C7CBE0; --primary: #7C3AED; --primary-soft: #F4F3FF;
+  --success: #12B76A; --error: #F04438; --grad: linear-gradient(90deg, #7839EE, #2E90FA, #06AED4);
+  --r: 10px; --shadow: 0 1px 2px rgba(14,20,40,.04), 0 8px 24px rgba(14,20,40,.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0 }
+body { font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; -webkit-font-smoothing: antialiased }
+a { color: inherit; text-decoration: none }
+button, input, select, textarea { font: inherit; color: inherit }
+h1 { font-size: 24px; letter-spacing: -.02em } h2 { font-size: 18px; letter-spacing: -.01em } h3 { font-size: 15px }
+.muted { color: var(--light) } .mid { color: var(--mid) } .err { color: var(--error) }
+.row { display: flex; gap: 8px; align-items: center } .grow { flex: 1 } .wrap { flex-wrap: wrap }
+.stack { display: grid; gap: 12px }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-weight: 600; font-size: 13px; transition: .15s; white-space: nowrap }
+.btn:hover { border-color: var(--border-mid) }
+.btn:disabled { opacity: .5; cursor: default }
+.btn.primary { background: var(--text); color: #fff; border-color: var(--text) }
+.btn.primary:hover { background: var(--primary); border-color: var(--primary) }
+.btn.danger { color: var(--error) }
+.btn.ghost { border-color: transparent; background: transparent }
+.btn.sm { padding: 5px 10px; font-size: 12px }
+
+.input, select.input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; outline: none }
+.input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,.12) }
+label.f { display: grid; gap: 5px; font-size: 12px; font-weight: 600; color: var(--mid) }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow) }
+.pad { padding: 20px }
+.logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px }
+.logo i { width: 26px; height: 26px; border-radius: 8px; background: var(--grad); display: grid; place-items: center; color: #fff; font-style: normal; font-size: 13px }
+
+/* Layout */
+.topbar { height: 56px; display: flex; align-items: center; gap: 16px; padding: 0 20px; background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10 }
+.crumb { color: var(--light) } .crumb b { color: var(--text) }
+.shell { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 56px) }
+.side { background: #fff; border-right: 1px solid var(--border); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px }
+.side .sec { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--light); text-transform: uppercase; padding: 14px 10px 6px; display: flex; justify-content: space-between; align-items: center }
+.side a { padding: 8px 10px; border-radius: 8px; color: var(--mid); display: flex; gap: 8px; align-items: center; font-weight: 500 }
+.side a:hover { background: var(--bg) }
+.side a.on { background: var(--primary-soft); color: var(--primary); font-weight: 600 }
+.main { padding: 24px 28px; min-width: 0 }
+.page { max-width: 1000px; margin: 0 auto; padding: 32px 20px }
+
+/* Grid de dados */
+.gridwrap { overflow: auto; border: 1px solid var(--border); border-radius: 12px; background: #fff; max-height: calc(100vh - 230px) }
+table.grid { border-collapse: collapse; width: 100%; font-size: 13px }
+.grid th { position: sticky; top: 0; background: #FAFBFC; text-align: left; font-weight: 600; color: var(--mid); padding: 9px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none }
+.grid td { padding: 0; border-bottom: 1px solid var(--border); border-right: 1px solid #F2F3F7 }
+.grid td .cell { padding: 8px 10px; min-height: 34px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px }
+.grid td input:not([type=checkbox]) { width: 100%; border: 0; padding: 8px 10px; outline: 2px solid var(--primary); background: #fff }
+.grid tr:hover td { background: #FAFAFF }
+.grid .num { text-align: right; font-variant-numeric: tabular-nums }
+.grid .idc { color: var(--light); width: 60px }
+.grid .chk { width: 36px; text-align: center }
+
+/* Modal */
+.overlay { position: fixed; inset: 0; background: rgba(14,20,40,.35); display: grid; place-items: center; z-index: 50; padding: 16px }
+.modal { width: 100%; max-width: 560px; max-height: 90vh; overflow: auto }
+.modal header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--border) }
+.modal footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border) }
+
+/* Dashboards */
+.wgrid { display: grid; align-items: start; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px }
+.widget { padding: 16px; min-height: 260px; display: flex; flex-direction: column }
+.widget.kpi { min-height: 130px }
+.widget .wh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px }
+.widget .acts { opacity: 0; transition: .15s } .widget:hover .acts { opacity: 1 }
+.kpiv { font-size: 38px; font-weight: 800; letter-spacing: -.03em; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px }
+.tile { padding: 18px; cursor: pointer; transition: .2s }
+.tile:hover { transform: translateY(-2px); border-color: var(--border-mid) }
+.empty { text-align: center; padding: 48px 20px; color: var(--light); border: 1px dashed var(--border-mid); border-radius: 14px }
+.toast { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: #fff; padding: 12px 16px; border-radius: 10px; z-index: 60; max-width: 420px; box-shadow: var(--shadow) }
+.toast.bad { background: var(--error) }
+.pill { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary) }
+
+@media (max-width: 800px) {
+  .shell { grid-template-columns: 1fr }
+  .side { border-right: 0; border-bottom: 1px solid var(--border) }
+  .main { padding: 16px }
+}
