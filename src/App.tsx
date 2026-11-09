@@ -3,6 +3,8 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import { useRoute } from './lib/router'
 import { ToastProvider } from './components/ui'
+import Topbar from './components/Topbar'
+import { AppViewer } from './components/Screens'
 import Login from './pages/Login'
 import Home from './pages/Home'
 import ProjectPage from './pages/Project'
@@ -18,11 +20,11 @@ export default function App() {
   }, [])
 
   if (session === undefined) return null
-  return (
-    <ToastProvider>
-      {!session ? <Login /> : route[0] === 'p' && route[1]
-        ? <ProjectPage projectId={route[1]} kind={route[2]} itemId={route[3]} email={session.user.email ?? ''} />
-        : <Home email={session.user.email ?? ''} />}
-    </ToastProvider>
-  )
+  const email = session?.user.email ?? ''
+  let page
+  if (!session) page = <Login />
+  else if (route[0] === 'p' && route[1]) page = <ProjectPage projectId={route[1]} kind={route[2]} itemId={route[3]} email={email} />
+  else if (route[0] === 'app' && route[1] && route[2]) page = <><Topbar email={email} /><AppViewer key={route[2]} projectId={route[1]} screenId={route[2]} /></>
+  else page = <Home email={email} tab={route[0] === 'integracoes' ? 'integracoes' : route[0] === 'membros' ? 'membros' : 'projetos'} />
+  return <ToastProvider>{page}</ToastProvider>
 }

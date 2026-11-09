@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
-import { api, Column, DataTable, Row } from '../lib/api'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { api, Column, ColType, DataTable, Filter, Row, slug } from '../lib/api'
+import FilterBar from './FilterBar'
+import { TYPES } from './NewTableModal'
+import { Modal, useAction } from './ui'
 import { convert, parseCsv, toCsv } from '../lib/csv'
-import { useAction } from './ui'
 
 const PAGE = 100
+type TRow = Row & { id: number }
 const fmt = (v: unknown, c: Column) => {
   if (v === null || v === undefined) return ''
   if (c.type === 'boolean') return v ? '✓' : '—'
@@ -15,21 +18,28 @@ const fmt = (v: unknown, c: Column) => {
 const inputType = (c: Column) => c.type === 'date' ? 'date' : c.type === 'timestamp' ? 'datetime-local'
   : c.type === 'integer' || c.type === 'numeric' ? 'number' : 'text'
 
-export default function TableView({ projectId, table, onDropped }: { projectId: string; table: DataTable; onDropped: () => void }) {
+export default function TableView({ projectId, table, canEdit, onChanged, onDropped }:
+  { projectId: string; table: DataTable; canEdit: boolean; onChanged: () => void; onDropped: () => void }) {
   const cols = table.columns
-  const [rows, setRows] = useState<Row[]>([])
+  const [rows, setRows] = useState<TRow[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
   const [order, setOrder] = useState<{ col: string; desc: boolean }>({ col: 'id', desc: true })
   const [sel, setSel] = useState<Set<number>>(new Set())
   const [edit, setEdit] = useState<{ id: number; col: string; value: string } | null>(null)
   const [draft, setDraft] = useState<Record<string, string> | null>(null)
+  const [filters, setFilters] = useState<Filter[]>([])
+  const [showFilters, setShowFilters] = useState(false)
+  const [colsModal, setColsModal] = useState(false)
+  const [newCol, setNewCol] = useState<{ label: string; type: ColType }>({ label: '', type: 'text' })
   const { run, busy } = useAction()
 
+  const reqId = useRef(0)
   const load = useCallback(async () => {
-    const r = await run(() => api.listRows(projectId, table.name, PAGE, page * PAGE, order.col, order.desc))
-    if (r) { setRows(r.rows); setTotal(r.total); setSel(new Set()) }
-  }, [run, projectId, table.name, page, order])
+    const id = ++reqId.current // ignora respostas antigas que chegam fora de ordem
+    const r = await run(() => api.listRows(projectId, table.name, PAGE, page * PAGE, order.col, order.desc, filters.filter(f => f.op === 'empty' || f.op === 'not_empty' || (f.value ?? '') !== '')))
+    if (r && id === reqId.current) { setRows(r.rows as TRow[]); setTotal(r.total); setSel(new Set()) }
+  }, [run, projectId, table.name, page, order, filters])
   useEffect(() => { load() }, [load])
 
   const toValue = (raw: string, c: Column) => c.type === 'boolean' ? raw === 'true' : convert(raw, c.type)
@@ -94,11 +104,14 @@ export default function TableView({ projectId, table, onDropped }: { projectId: 
       <div className="row wrap">
         <h1 className="grow">{table.label} <span className="muted" style={{ fontSize: 14, fontWeight: 500 }}>{total} registros</span></h1>
         {sel.size > 0 && <button className="btn danger" onClick={removeSelected}>Apagar {sel.size}</button>}
+        <button className={'btn' + (filters.length ? ' active' : '')} onClick={() => setShowFilters(v => !v)}>⚲ Filtros{filters.length ? ` (${filters.length})` : ''}</button>
+        {canEdit && <button className="btn" onClick={() => setColsModal(true)}>☰ Colunas</button>}
         <label className="btn">⬆ Importar CSV<input type="file" accept=".csv" hidden onChange={e => { importCsv(e.target.files?.[0]); e.target.value = '' }} /></label>
         <button className="btn" onClick={exportCsv} disabled={!total}>⬇ Exportar</button>
         <button className="btn primary" onClick={() => setDraft({})}>+ Nova linha</button>
       </div>
 
+      {showFilters && <div className="card pad"><FilterBar columns={cols} value={filters} onChange={f => { setFilters(f); setPage(0) }} /></div>}
       <div className="gridwrap">
         <table className="grid">
           <thead><tr>
@@ -153,8 +166,33 @@ export default function TableView({ projectId, table, onDropped }: { projectId: 
         <button className="btn sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>‹</button>
         <span className="mid">Página {page + 1} de {pages}</span>
         <button className="btn sm" disabled={page + 1 >= pages} onClick={() => setPage(p => p + 1)}>›</button>
-        <button className="btn sm danger ghost" onClick={drop}>Apagar tabela</button>
+        {canEdit && <button className="btn sm danger ghost" onClick={drop}>Apagar tabela</button>}
       </div>
+      {colsModal && (
+        <Modal title={`Colunas de ${table.label}`} onClose={() => setColsModal(false)}>
+          <p className="muted" style={{ fontSize: 12 }}>Renomear muda só o nome exibido (o nome técnico continua igual, para não quebrar gráficos).</p>
+          {cols.map(c => (
+            <div className="row" key={c.name}>
+              <input className="input" defaultValue={c.label || c.name} onBlur={async e => {
+                if (e.target.value && e.target.value !== (c.label || c.name)) { await run(() => api.renameColumn(projectId, table.name, c.name, e.target.value), 'Coluna renomeada'); onChanged() }
+              }} />
+              <span className="muted" style={{ width: 110, fontSize: 12 }}>{TYPES.find(t => t.v === c.type)?.l} · <code>{c.name}</code></span>
+              <button className="btn ghost sm danger" onClick={async () => {
+                if (confirm(`Apagar a coluna "${c.label || c.name}" e todos os valores dela?`)) { await run(() => api.dropColumn(projectId, table.name, c.name), 'Coluna apagada'); onChanged() }
+              }}>✕</button>
+            </div>
+          ))}
+          <b style={{ marginTop: 8 }}>Nova coluna</b>
+          <div className="row">
+            <input className="input" placeholder="Nome" value={newCol.label} onChange={e => setNewCol({ ...newCol, label: e.target.value })} />
+            <select className="input" style={{ maxWidth: 150 }} value={newCol.type} onChange={e => setNewCol({ ...newCol, type: e.target.value as ColType })}>
+              {TYPES.map(t => <option key={t.v} value={t.v}>{t.l}</option>)}</select>
+            <button className="btn primary" disabled={!newCol.label.trim()} onClick={async () => {
+              if (await run(() => api.addColumn(projectId, table.name, { name: slug(newCol.label), label: newCol.label.trim(), type: newCol.type }).then(() => true), 'Coluna adicionada')) { setNewCol({ label: '', type: 'text' }); onChanged() }
+            }}>Adicionar</button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
