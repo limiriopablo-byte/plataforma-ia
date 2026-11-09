@@ -32,6 +32,12 @@ export default function AgentView({ projectId, workspaceId, onChanged }: { proje
   const [choice, setC] = useState<AiChoice>(getChoice)
   const [favs, setFavsState] = useState<AiChoice[]>(getFavs)
   const [showModels, setShowModels] = useState(false)
+  const [hasKey, setHasKey] = useState<boolean | null>(null)
+  const checkKey = useCallback(async () => {
+    if (!workspaceId) return
+    try { setHasKey((await api.integrations(workspaceId)).some(i => i.kind === 'anthropic')) } catch { setHasKey(null) }
+  }, [workspaceId])
+  useEffect(() => { checkKey() }, [checkKey, showModels])
   useEffect(() => {
     const on = () => { setC(getChoice()); setFavsState(getFavs()) }
     window.addEventListener('ai-prefs', on)
@@ -75,6 +81,16 @@ export default function AgentView({ projectId, workspaceId, onChanged }: { proje
         ))}
       </aside>
       <section className="conv">
+        {hasKey === false && (
+          <div className="key-banner">
+            <b>Este chat usa uma chave de API da Anthropic</b> (cobrada à parte, por uso). Nenhuma chave foi conectada neste workspace. Escolha:
+            <div className="row wrap" style={{ marginTop: 10 }}>
+              <button className="btn primary" onClick={() => setShowModels(true)}>Conectar chave de API</button>
+              <a className="btn" href="#/claude">Usar com a minha assinatura do Claude →</a>
+            </div>
+            <span className="muted" style={{ fontSize: 12 }}>Com a assinatura, você conversa no claude.ai / Claude Desktop / Claude Code (com o conector da plataforma) em vez desta tela.</span>
+          </div>
+        )}
         <div className="msgs">
           {!msgs.length && (
             <div className="stack" style={{ maxWidth: 640, margin: '40px auto', textAlign: 'center' }}>
