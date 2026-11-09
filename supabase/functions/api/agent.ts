@@ -9,7 +9,7 @@ export const MODELS = ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5
 export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
 const MAX_STEPS = 12
 
-const SYSTEM = `Você é o agente de construção da Plataforma IA. Você ajuda empresas brasileiras a criar sistemas, tabelas, BI e telas conectados aos dados delas.
+export const SYSTEM = `Você é o agente de construção da Plataforma IA. Você ajuda empresas brasileiras a criar sistemas, tabelas, BI e telas conectados aos dados delas.
 Responda sempre em português do Brasil, de forma direta.
 
 Como a plataforma funciona:
@@ -42,7 +42,7 @@ const blockSchema = obj({
   trunc: { type: 'string', enum: ['day', 'week', 'month', 'year'] }, filters: filtersSchema, text: { type: 'string' },
 }, ['type', 'title'])
 
-const TOOLS: ToolDef[] = [
+export const TOOLS: ToolDef[] = [
   { name: 'list_project', description: 'Lista tabelas locais (com colunas), consultas ao vivo, importações, dashboards e telas do projeto.', input_schema: obj({}) },
   { name: 'read_rows', description: 'Lê até 50 linhas de uma tabela local, com filtros opcionais.', input_schema: obj({ table: { type: 'string' }, filters: filtersSchema }, ['table']) },
   { name: 'create_table', description: 'Cria uma tabela local. Tipos: text, integer, numeric, boolean, date, timestamp. Nomes técnicos em minúsculas com _.', input_schema: obj({ name: { type: 'string' }, label: { type: 'string' }, columns: { type: 'array', items: obj({ name: { type: 'string' }, label: { type: 'string' }, type: { type: 'string', enum: ['text', 'integer', 'numeric', 'boolean', 'date', 'timestamp'] } }, ['name', 'type']) } }, ['name', 'label', 'columns']) },
@@ -151,7 +151,7 @@ export async function agentChat(ctx: Ctx, body: { project_id: string; chat_id?: 
   return { chat_id: chatId, reply: finalText, actions, model, effort, usage }
 }
 
-function makeExecutor(ctx: Ctx, projectId: string, ws: string, actions: string[]) {
+export function makeExecutor(ctx: Ctx, projectId: string, ws: string, actions: string[]) {
   const rpc = async (fn: string, args: Record<string, unknown>) => {
     const { data, error } = await ctx.db.rpc(fn, args)
     if (error) throw new Error(error.message)

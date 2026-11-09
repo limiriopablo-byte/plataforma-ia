@@ -5,8 +5,9 @@ import Topbar from '../components/Topbar'
 import { Modal, useAction } from '../components/ui'
 import Integrations from '../components/Integrations'
 import Members from '../components/Members'
+import ClaudeConnect from '../components/ClaudeConnect'
 
-type Tab = 'projetos' | 'integracoes' | 'membros'
+type Tab = 'projetos' | 'integracoes' | 'membros' | 'claude'
 
 export default function Home({ email, tab }: { email: string; tab: Tab }) {
   const [workspaces, setWorkspaces] = useState<Workspace[] | null>(null)
@@ -65,10 +66,11 @@ export default function Home({ email, tab }: { email: string; tab: Tab }) {
               </select>
               <button className="btn" onClick={() => setModal('ws')}>+ Workspace</button>
               <div className="grow" />
-              <nav className="tabs">{tabLink('projetos', 'Projetos')}{tabLink('integracoes', 'Integrações')}{tabLink('membros', 'Membros')}</nav>
+              <nav className="tabs">{tabLink('projetos', 'Projetos')}{tabLink('integracoes', 'Integrações')}{tabLink('membros', 'Membros')}{tabLink('claude', '✳ Conectar ao Claude')}</nav>
             </div>
 
-            {tab === 'integracoes' && ws ? <Integrations key={ws} ws={ws} canEdit={dev} />
+            {tab === 'claude' ? <ClaudeConnect />
+            : tab === 'integracoes' && ws ? <Integrations key={ws} ws={ws} canEdit={dev} />
             : tab === 'membros' && ws ? <Members key={ws} ws={ws} isOwner={role === 'owner'} />
             : (
               <>

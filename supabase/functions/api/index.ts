@@ -3,11 +3,12 @@
 import { HttpError, admin, aggregateRows, applyFilters, auth, loadIntegration, projectWs, requireRole, runImport, runOnlineQuery, runWebhook } from './core.ts'
 import { runQuery, testConnection } from './connectors.ts'
 import { agentChat } from './agent.ts'
+import { mcpHandler } from './mcp.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-scheduler-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-scheduler-secret, mcp-protocol-version, mcp-session-id',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
 }
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
 
@@ -15,6 +16,10 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const path = new URL(req.url).pathname.replace(/^.*?\/api/, '')
   try {
+    // ---- Conector MCP para o Claude: /api/mcp/<chave> (ou /api/mcp com Authorization: Bearer <chave>) ----
+    const mcp = path.match(/^\/mcp(?:\/(pia_[a-f0-9]{48}))?\/?$/)
+    if (mcp) return await mcpHandler(req, mcp[1], CORS)
+
     if (req.method !== 'POST') throw new HttpError(405, 'Use POST')
 
     // ---- Webhook de entrada: POST /api/webhook/<token> ----

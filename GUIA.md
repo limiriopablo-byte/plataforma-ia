@@ -49,13 +49,25 @@ Dicas:
 
 O agente testa o SQL no Sankhya, cria a consulta ao vivo e o dashboard. Cada pedido consome créditos da sua conta Anthropic.
 
-## 6. Equipe
+## 6. Usar pelo Claude com a sua assinatura (conector MCP)
+
+Sem gastar crédito de API: você usa o Claude (claude.ai, app de desktop ou Claude Code) e ele opera a plataforma.
+
+1. Aba **✳ Conectar ao Claude** → **Gerar endereço** → copie (aparece só uma vez; funciona como senha).
+2. **claude.ai** ou **Claude Desktop**: Configurações → Conectores → Adicionar conector personalizado → cole o endereço.
+   **Claude Code**: `claude mcp add --transport http plataforma-ia <endereço>`.
+3. No chat do Claude: *"Liste meus projetos na Plataforma IA"*, *"crie um dashboard ao vivo do Sankhya com vendas por vendedor"*.
+
+O conector age com as suas permissões. Para cortar o acesso, clique em **Revogar** (vale na hora).
+Conectores personalizados exigem plano pago do Claude (Pro, Max, Team ou Enterprise).
+
+## 7. Equipe
 
 **Membros → Convidar**: informe o e-mail e o papel.
 - **Dono**: tudo. **Desenvolvedor**: constrói (integrações, tabelas, telas, agente). **Business**: usa os apps e lança dados.
 - Se a pessoa ainda não tem conta, o convite fica pendente e vale automaticamente quando ela se cadastrar com o mesmo e-mail.
 
-## 7. Webhooks
+## 8. Webhooks
 
 **Automações → + Webhook** → informe a tabela de destino → copie o endereço.
 Outros sistemas enviam `POST` com JSON (objeto ou lista) e os dados viram linhas na tabela. Trate o endereço como uma senha.

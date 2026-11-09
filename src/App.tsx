@@ -25,6 +25,6 @@ export default function App() {
   if (!session) page = <Login />
   else if (route[0] === 'p' && route[1]) page = <ProjectPage projectId={route[1]} kind={route[2]} itemId={route[3]} email={email} />
   else if (route[0] === 'app' && route[1] && route[2]) page = <><Topbar email={email} /><AppViewer key={route[2]} projectId={route[1]} screenId={route[2]} /></>
-  else page = <Home email={email} tab={route[0] === 'integracoes' ? 'integracoes' : route[0] === 'membros' ? 'membros' : 'projetos'} />
+  else page = <Home email={email} tab={route[0] === 'integracoes' ? 'integracoes' : route[0] === 'membros' ? 'membros' : route[0] === 'claude' ? 'claude' : 'projetos'} />
   return <ToastProvider>{page}</ToastProvider>
 }

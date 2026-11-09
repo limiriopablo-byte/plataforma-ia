@@ -139,3 +139,5 @@ textarea.input { resize: vertical; line-height: 1.5 }
 .pill.ok { background: #ECFDF3; color: #027A48 }
 .model-sel { width: 190px; font-size: 12px; padding: 6px 8px }
 @media (max-width: 800px) { .ai-body { grid-template-columns: 1fr } .ai-side { border-right: 0; border-bottom: 1px solid var(--border) } }
+.steps { display: grid; gap: 12px; font-size: 14px; line-height: 1.6 }
+.steps .pill { margin-right: 6px }
